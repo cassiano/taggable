@@ -141,7 +141,6 @@ class TestTaggable(TestCase):
         with self.assertRaises(ValueError):
             campinas.add_tag(rj)
 
-
     def test_checks_document_limits_on_add(self):
         class State(Tag):
             allowed_document_types = [('City', 1)]
@@ -160,6 +159,32 @@ class TestTaggable(TestCase):
 
         with self.assertRaises(ValueError):
             sp.add_document(itatiba)
+
+    def test_only_taggable_documents_can_be_added_to_tags(self):
+        class State(Tag):
+            pass
+
+        class NonTaggableDocument(Document):
+            pass
+
+        sp = State(name='SP').save()
+        non_taggable_document = NonTaggableDocument().save
+
+        with self.assertRaises(TypeError):
+            sp.add_document(non_taggable_document)
+
+    def test_only_tags_can_be_added_to_taggable_documents(self):
+        class City(Document, TaggableDocument):
+            pass
+
+        class NonTag(Document):
+            pass
+
+        campinas = City(name='Campinas').save()
+        non_tag = NonTag().save
+
+        with self.assertRaises(TypeError):
+            campinas.add_tag(non_tag)
 
 
 if __name__ == '__main__':

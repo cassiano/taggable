@@ -69,6 +69,10 @@ class TaggableDocument(object):
         return [tag for tag in self.tags() if isinstance(tag, klass(tag_type))]
 
     def add_tag(self, tag):
+        if not isinstance(tag, Tag):
+            raise TypeError("Invalid type %s. Only tags are allowed in document '%s'." %
+                (type(tag).__name__, self))
+
         if self.can_add_tag(tag):
             return tag.add_document(self)
 
@@ -160,6 +164,10 @@ class Tag(Document, TaggableDocument):
         return [ref.document for ref in refs]
 
     def add_document(self, document):
+        if not isinstance(document, TaggableDocument):
+            raise TypeError("Invalid type %s. Only taggable documents are allowed in tag '%s'." %
+                (type(document).__name__, self))
+
         if self.can_add_document(document):
             return DocumentTagRefs(document=document, tag=self).save()
 
