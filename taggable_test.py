@@ -175,7 +175,7 @@ class TestTaggable(TestCase):
 
     def test_only_tags_can_be_added_to_taggable_documents(self):
         class City(Document, TaggableDocument):
-            pass
+            name = StringField(required=True)
 
         class NonTagState(Document):
             name = StringField(required=True)
