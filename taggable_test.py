@@ -164,27 +164,27 @@ class TestTaggable(TestCase):
         class State(Tag):
             pass
 
-        class NonTaggableDocument(Document):
-            pass
+        class NonTaggableCity(Document):
+            name = StringField(required=True)
 
         sp = State(name='SP').save()
-        non_taggable_document = NonTaggableDocument().save
+        campinas = NonTaggableCity(name='Campinas').save()
 
         with self.assertRaises(TypeError):
-            sp.add_document(non_taggable_document)
+            sp.add_document(campinas)
 
     def test_only_tags_can_be_added_to_taggable_documents(self):
         class City(Document, TaggableDocument):
             pass
 
-        class NonTag(Document):
-            pass
+        class NonTagState(Document):
+            name = StringField(required=True)
 
         campinas = City(name='Campinas').save()
-        non_tag = NonTag().save
+        sp = NonTagState(name='SP').save()
 
         with self.assertRaises(TypeError):
-            campinas.add_tag(non_tag)
+            campinas.add_tag(sp)
 
 
 if __name__ == '__main__':
