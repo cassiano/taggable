@@ -10,14 +10,14 @@ class TestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestCase, self).__init__(*args, **kwargs)
 
-        self.db = connect(self.TEST_DATABASE_NAME)
+        self.db_connection = connect(self.TEST_DATABASE_NAME)
 
         create_document_tag_refs_document_cls_index()
 
     def setUp(self):
         super(TestCase, self).setUp()
 
-        self.db.drop_database(self.TEST_DATABASE_NAME)
+        self.db_connection.drop_database(self.TEST_DATABASE_NAME)
 
 
 class TestTaggable(TestCase):
@@ -25,166 +25,213 @@ class TestTaggable(TestCase):
         super(TestTaggable, self).setUp()
 
     def test_allowed_tag_types_can_be_specified_using_classes(self):
-        class State(Tag):
-            allowed_document_types = ['City']
+        class Sale(Tag):
+            allowed_document_types = ['MenClothing']
 
-        class City(Document, TaggableDocument):
-            allowed_tag_types = [State]
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = [Sale]
 
             name = StringField(required=True)
 
 
-        sp = State(name='SP')
-        campinas = City(name='Campinas')
+        summer_sale = Sale(name='Summer Sale')
+        shoes = MenClothing(name='Shoes')
 
-        self.assertTrue(sp.can_add_document(campinas))
+        self.assertTrue(summer_sale.can_add_document(shoes))
 
     def test_allowed_tag_types_can_be_specified_using_strings(self):
-        class State(Tag):
-            allowed_document_types = ['City']
+        class Sale(Tag):
+            allowed_document_types = ['MenClothing']
 
-        class City(Document, TaggableDocument):
-            allowed_tag_types = ['State']
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = ['Sale']
 
             name = StringField(required=True)
 
 
-        sp = State(name='SP')
-        campinas = City(name='Campinas')
+        summer_sale = Sale(name='Summer Sale')
+        shoes = MenClothing(name='Shoes')
 
-        self.assertTrue(sp.can_add_document(campinas))
+        self.assertTrue(summer_sale.can_add_document(shoes))
 
     def test_allowed_document_types_can_be_specified_using_classes(self):
-        class City(Document, TaggableDocument):
-            allowed_tag_types = ['State']
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = ['Sale']
 
             name = StringField(required=True)
 
-        class State(Tag):
-            allowed_document_types = [City]
+        class Sale(Tag):
+            allowed_document_types = [MenClothing]
 
 
-        sp = State(name='SP')
-        campinas = City(name='Campinas')
+        summer_sale = Sale(name='Summer Sale')
+        shoes = MenClothing(name='Shoes')
 
-        self.assertTrue(campinas.can_add_tag(sp))
+        self.assertTrue(shoes.can_add_tag(summer_sale))
 
     def test_allowed_document_types_can_be_specified_using_strings(self):
-        class City(Document, TaggableDocument):
-            allowed_tag_types = ['State']
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = ['Sale']
 
             name = StringField(required=True)
 
-        class State(Tag):
-            allowed_document_types = ['City']
+        class Sale(Tag):
+            allowed_document_types = ['MenClothing']
 
 
-        sp = State(name='SP')
-        campinas = City(name='Campinas')
+        summer_sale = Sale(name='Summer Sale')
+        shoes = MenClothing(name='Shoes')
 
-        self.assertTrue(campinas.can_add_tag(sp))
+        self.assertTrue(shoes.can_add_tag(summer_sale))
 
     def test_add_tag_works(self):
-        class State(Tag):
-            allowed_document_types = ['City']
+        class Sale(Tag):
+            allowed_document_types = ['MenClothing']
 
-        class City(Document, TaggableDocument):
-            allowed_tag_types = [State]
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = [Sale]
 
             name = StringField(required=True)
 
 
-        sp = State(name='SP').save()
-        campinas = City(name='Campinas').save()
-        itatiba = City(name='Itatiba').save()
+        summer_sale = Sale(name='Summer Sale').save()
+        shoes = MenClothing(name='Shoes').save()
+        pants = MenClothing(name='Pants').save()
 
-        campinas.add_tag(sp)
-        itatiba.add_tag(sp)
+        shoes.add_tag(summer_sale)
+        pants.add_tag(summer_sale)
 
-        self.assertEqual(set(sp.documents_by_type(City)), set([campinas, itatiba]))
+        self.assertEqual(set(summer_sale.documents_by_type(MenClothing)), set([shoes, pants]))
 
     def test_add_document_works(self):
-        class State(Tag):
-            allowed_document_types = ['City']
+        class Sale(Tag):
+            allowed_document_types = ['MenClothing']
 
-        class City(Document, TaggableDocument):
-            allowed_tag_types = [State]
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = [Sale]
 
             name = StringField(required=True)
 
 
-        sp = State(name='SP').save()
-        campinas = City(name='Campinas').save()
-        itatiba = City(name='Itatiba').save()
+        summer_sale = Sale(name='Summer Sale').save()
+        shoes = MenClothing(name='Shoes').save()
+        pants = MenClothing(name='Pants').save()
 
-        sp.add_document(campinas)
-        sp.add_document(itatiba)
+        summer_sale.add_document(shoes)
+        summer_sale.add_document(pants)
 
-        self.assertEqual(set(sp.documents_by_type(City)), set([campinas, itatiba]))
+        self.assertEqual(set(summer_sale.documents_by_type(MenClothing)), set([shoes, pants]))
 
     def test_checks_tag_limits_on_add(self):
-        class State(Tag):
-            allowed_document_types = ['City']
+        class Sale(Tag):
+            allowed_document_types = ['MenClothing']
 
-        class City(Document, TaggableDocument):
-            allowed_tag_types = [(State, 1)]
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = [(Sale, 1)]
 
             name = StringField(required=True)
 
 
-        sp = State(name='SP').save()
-        rj = State(name='RJ').save()
-        campinas = City(name='Campinas').save()
+        summer_sale = Sale(name='Summer Sale').save()
+        winter_sale = Sale(name='Winter Sale').save()
+        shoes = MenClothing(name='Shoes').save()
 
-        campinas.add_tag(sp)
+        shoes.add_tag(summer_sale)
 
         with self.assertRaises(ValueError):
-            campinas.add_tag(rj)
+            shoes.add_tag(winter_sale)
 
     def test_checks_document_limits_on_add(self):
-        class State(Tag):
-            allowed_document_types = [('City', 1)]
+        class Sale(Tag):
+            allowed_document_types = [('MenClothing', 1)]
 
-        class City(Document, TaggableDocument):
-            allowed_tag_types = [State]
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = [Sale]
 
             name = StringField(required=True)
 
 
-        sp = State(name='SP').save()
-        campinas = City(name='Campinas').save()
-        itatiba = City(name='Itatiba').save()
+        summer_sale = Sale(name='Summer Sale').save()
+        shoes = MenClothing(name='Shoes').save()
+        pants = MenClothing(name='Pants').save()
 
-        sp.add_document(campinas)
+        summer_sale.add_document(shoes)
 
         with self.assertRaises(ValueError):
-            sp.add_document(itatiba)
+            summer_sale.add_document(pants)
 
     def test_only_taggable_documents_can_be_added_to_tags(self):
-        class State(Tag):
+        class Sale(Tag):
             pass
 
-        class NonTaggableCity(Document):
+        class NonTaggableMenClothing(Document):
             name = StringField(required=True)
 
-        sp = State(name='SP').save()
-        campinas = NonTaggableCity(name='Campinas').save()
+        summer_sale = Sale(name='Summer Sale').save()
+        shoes = NonTaggableMenClothing(name='Shoes').save()
 
         with self.assertRaises(TypeError):
-            sp.add_document(campinas)
+            summer_sale.add_document(shoes)
 
     def test_only_tags_can_be_added_to_taggable_documents(self):
-        class City(Document, TaggableDocument):
+        class MenClothing(Document, TaggableDocument):
             name = StringField(required=True)
 
-        class NonTagState(Document):
+        class NonTagSale(Document):
             name = StringField(required=True)
 
-        campinas = City(name='Campinas').save()
-        sp = NonTagState(name='SP').save()
+        shoes = MenClothing(name='Shoes').save()
+        summer_sale = NonTagSale(name='Summer Sale').save()
 
         with self.assertRaises(TypeError):
-            campinas.add_tag(sp)
+            shoes.add_tag(summer_sale)
+
+    def test_only_allowed_documents_can_be_added_to_tags(self):
+        class Sale(Tag):
+            allowed_document_types = ['MenClothing']
+
+        class MenClothing(Document, TaggableDocument):
+            name = StringField(required=True)
+
+            meta = { 'allow_inheritance': True }
+
+        class YoungMenClothing(MenClothing):
+            pass
+
+        class WomenClothing(Document, TaggableDocument):
+            name = StringField(required=True)
+
+        summer_sale = Sale(name='Summer Sale').save()
+        shoes = MenClothing(name='Shoes').save()
+        snickers = YoungMenClothing(name='Snickers').save()
+        dress = WomenClothing(name='Dress').save()
+
+        self.assertIsInstance(summer_sale.add_document(shoes), DocumentTagRefs)
+        self.assertIsInstance(summer_sale.add_document(snickers), DocumentTagRefs)
+
+        with self.assertRaises(TypeError):
+            summer_sale.add_document(dress)
+
+    def test_only_allowed_tags_can_be_added_to_documents(self):
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = ['Sale']
+
+            name = StringField(required=True)
+
+        class Sale(Tag):
+            pass
+
+        class NewCollection(Tag):
+            pass
+
+        shoes = MenClothing(name='Shoes').save()
+        summer_sale = Sale(name='Summer Sale').save()
+        new_winter_collection = NewCollection(name='New Winter Collection')
+
+        self.assertIsInstance(shoes.add_tag(summer_sale), DocumentTagRefs)
+
+        with self.assertRaises(TypeError):
+            shoes.add_tag(new_winter_collection)
 
 
 if __name__ == '__main__':
