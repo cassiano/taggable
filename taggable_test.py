@@ -10,14 +10,14 @@ class TestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestCase, self).__init__(*args, **kwargs)
 
-        self.db_connection = connect(self.TEST_DATABASE_NAME)
+        self.mongo_client = connect(self.TEST_DATABASE_NAME)
 
         create_document_tag_refs_document_cls_index()
 
     def setUp(self):
         super(TestCase, self).setUp()
 
-        self.db_connection.drop_database(self.TEST_DATABASE_NAME)
+        self.mongo_client.drop_database(self.TEST_DATABASE_NAME)
 
 
 class TestTaggable(TestCase):
