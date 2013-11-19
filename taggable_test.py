@@ -122,44 +122,6 @@ class TestTaggable(TestCase):
 
         self.assertEqual(set(summer_sale.documents_by_type(MenClothing)), set([shoes, pants]))
 
-    def test_checks_tag_limits_on_add(self):
-        class Sale(Tag):
-            allowed_document_types = ['MenClothing']
-
-        class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = [(Sale, 1)]
-
-            name = StringField(required=True)
-
-
-        summer_sale = Sale(name='Summer Sale').save()
-        winter_sale = Sale(name='Winter Sale').save()
-        shoes = MenClothing(name='Shoes').save()
-
-        shoes.add_tag(summer_sale)
-
-        with self.assertRaises(ValueError):
-            shoes.add_tag(winter_sale)
-
-    def test_checks_document_limits_on_add(self):
-        class Sale(Tag):
-            allowed_document_types = [('MenClothing', 1)]
-
-        class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = [Sale]
-
-            name = StringField(required=True)
-
-
-        summer_sale = Sale(name='Summer Sale').save()
-        shoes = MenClothing(name='Shoes').save()
-        pants = MenClothing(name='Pants').save()
-
-        summer_sale.add_document(shoes)
-
-        with self.assertRaises(ValueError):
-            summer_sale.add_document(pants)
-
     def test_only_taggable_documents_can_be_added_to_tags(self):
         class Sale(Tag):
             pass
@@ -206,8 +168,8 @@ class TestTaggable(TestCase):
         snickers = YoungMenClothing(name='Snickers').save()
         dress = WomenClothing(name='Dress').save()
 
-        self.assertIsInstance(summer_sale.add_document(shoes), DocumentTagRefs)
-        self.assertIsInstance(summer_sale.add_document(snickers), DocumentTagRefs)
+        summer_sale.add_document(shoes)
+        summer_sale.add_document(snickers)
 
         with self.assertRaises(TypeError):
             summer_sale.add_document(dress)
@@ -228,10 +190,48 @@ class TestTaggable(TestCase):
         summer_sale = Sale(name='Summer Sale').save()
         new_winter_collection = NewCollection(name='New Winter Collection')
 
-        self.assertIsInstance(shoes.add_tag(summer_sale), DocumentTagRefs)
+        shoes.add_tag(summer_sale)
 
         with self.assertRaises(TypeError):
             shoes.add_tag(new_winter_collection)
+
+    def test_checks_tag_limits_on_add(self):
+        class Sale(Tag):
+            allowed_document_types = ['MenClothing']
+
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = [(Sale, 1)]
+
+            name = StringField(required=True)
+
+
+        summer_sale = Sale(name='Summer Sale').save()
+        winter_sale = Sale(name='Winter Sale').save()
+        shoes = MenClothing(name='Shoes').save()
+
+        shoes.add_tag(summer_sale)
+
+        with self.assertRaises(ValueError):
+            shoes.add_tag(winter_sale)
+
+    def test_checks_document_limits_on_add(self):
+        class Sale(Tag):
+            allowed_document_types = [('MenClothing', 1)]
+
+        class MenClothing(Document, TaggableDocument):
+            allowed_tag_types = [Sale]
+
+            name = StringField(required=True)
+
+
+        summer_sale = Sale(name='Summer Sale').save()
+        shoes = MenClothing(name='Shoes').save()
+        pants = MenClothing(name='Pants').save()
+
+        summer_sale.add_document(shoes)
+
+        with self.assertRaises(ValueError):
+            summer_sale.add_document(pants)
 
 
 if __name__ == '__main__':
