@@ -11,25 +11,25 @@ class TestCase(unittest.TestCase):
         super(TestCase, self).__init__(*args, **kwargs)
 
         self.mongo_client = connect(self.TEST_DATABASE_NAME)
-
         create_document_tag_refs_document_cls_index()
 
     def setUp(self):
         super(TestCase, self).setUp()
 
         self.mongo_client.drop_database(self.TEST_DATABASE_NAME)
+        recreate_indexes()
 
 
 class TestTaggable(TestCase):
     def setUp(self):
         super(TestTaggable, self).setUp()
 
-    def test_allowed_tag_types_can_be_specified_using_classes(self):
+    def test_allowed_tags_can_be_specified_using_classes(self):
         class Sale(Tag):
-            allowed_document_types = ['MenClothing']
+            allowed_documents = ['MenClothing']
 
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = [Sale]
+            allowed_tags = [Sale]
 
             name = StringField(required=True)
 
@@ -39,12 +39,12 @@ class TestTaggable(TestCase):
 
         self.assertTrue(summer_sale.can_add_document(shoes))
 
-    def test_allowed_tag_types_can_be_specified_using_strings(self):
+    def test_allowed_tags_can_be_specified_using_strings(self):
         class Sale(Tag):
-            allowed_document_types = ['MenClothing']
+            allowed_documents = ['MenClothing']
 
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = ['Sale']
+            allowed_tags = ['Sale']
 
             name = StringField(required=True)
 
@@ -54,14 +54,14 @@ class TestTaggable(TestCase):
 
         self.assertTrue(summer_sale.can_add_document(shoes))
 
-    def test_allowed_document_types_can_be_specified_using_classes(self):
+    def test_allowed_documents_can_be_specified_using_classes(self):
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = ['Sale']
+            allowed_tags = ['Sale']
 
             name = StringField(required=True)
 
         class Sale(Tag):
-            allowed_document_types = [MenClothing]
+            allowed_documents = [MenClothing]
 
 
         summer_sale = Sale(name='Summer Sale')
@@ -69,14 +69,14 @@ class TestTaggable(TestCase):
 
         self.assertTrue(shoes.can_add_tag(summer_sale))
 
-    def test_allowed_document_types_can_be_specified_using_strings(self):
+    def test_allowed_documents_can_be_specified_using_strings(self):
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = ['Sale']
+            allowed_tags = ['Sale']
 
             name = StringField(required=True)
 
         class Sale(Tag):
-            allowed_document_types = ['MenClothing']
+            allowed_documents = ['MenClothing']
 
 
         summer_sale = Sale(name='Summer Sale')
@@ -86,10 +86,10 @@ class TestTaggable(TestCase):
 
     def test_add_tag_works(self):
         class Sale(Tag):
-            allowed_document_types = ['MenClothing']
+            allowed_documents = ['MenClothing']
 
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = [Sale]
+            allowed_tags = [Sale]
 
             name = StringField(required=True)
 
@@ -105,10 +105,10 @@ class TestTaggable(TestCase):
 
     def test_add_document_works(self):
         class Sale(Tag):
-            allowed_document_types = ['MenClothing']
+            allowed_documents = ['MenClothing']
 
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = [Sale]
+            allowed_tags = [Sale]
 
             name = StringField(required=True)
 
@@ -150,7 +150,7 @@ class TestTaggable(TestCase):
 
     def test_only_allowed_documents_can_be_added_to_tags(self):
         class Sale(Tag):
-            allowed_document_types = ['MenClothing']
+            allowed_documents = ['MenClothing']
 
         class MenClothing(Document, TaggableDocument):
             name = StringField(required=True)
@@ -176,7 +176,7 @@ class TestTaggable(TestCase):
 
     def test_only_allowed_tags_can_be_added_to_documents(self):
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = ['Sale']
+            allowed_tags = ['Sale']
 
             name = StringField(required=True)
 
@@ -197,10 +197,10 @@ class TestTaggable(TestCase):
 
     def test_checks_tag_limits_on_add(self):
         class Sale(Tag):
-            allowed_document_types = ['MenClothing']
+            allowed_documents = ['MenClothing']
 
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = [(Sale, 1)]
+            allowed_tags = [(Sale, 1)]
 
             name = StringField(required=True)
 
@@ -216,10 +216,10 @@ class TestTaggable(TestCase):
 
     def test_checks_document_limits_on_add(self):
         class Sale(Tag):
-            allowed_document_types = [('MenClothing', 1)]
+            allowed_documents = [('MenClothing', 1)]
 
         class MenClothing(Document, TaggableDocument):
-            allowed_tag_types = [Sale]
+            allowed_tags = [Sale]
 
             name = StringField(required=True)
 
@@ -232,6 +232,42 @@ class TestTaggable(TestCase):
 
         with self.assertRaises(ValueError):
             summer_sale.add_document(pants)
+
+    def test_cannot_add_tag_to_document_twice(self):
+        class Sale(Tag):
+            allowed_documents = ['MenClothing']
+
+        class MenClothing(Document, TaggableDocument):
+            allowed_tags = [Sale]
+
+            name = StringField(required=True)
+
+
+        summer_sale = Sale(name='Summer Sale').save()
+        shoes = MenClothing(name='Shoes').save()
+
+        shoes.add_tag(summer_sale)
+
+        with self.assertRaises(NotUniqueError):
+            shoes.add_tag(summer_sale)
+
+    def test_cannot_add_document_to_tag_twice(self):
+        class Sale(Tag):
+            allowed_documents = ['MenClothing']
+
+        class MenClothing(Document, TaggableDocument):
+            allowed_tags = [Sale]
+
+            name = StringField(required=True)
+
+
+        summer_sale = Sale(name='Summer Sale').save()
+        shoes = MenClothing(name='Shoes').save()
+
+        summer_sale.add_document(shoes)
+
+        with self.assertRaises(NotUniqueError):
+            summer_sale.add_document(shoes)
 
 
 if __name__ == '__main__':
