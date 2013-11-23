@@ -11,12 +11,16 @@ class TestCase(unittest.TestCase):
         super(TestCase, self).__init__(*args, **kwargs)
 
         self.mongo_client = connect(self.TEST_DATABASE_NAME)
+        self.db = self.mongo_client[self.TEST_DATABASE_NAME]
         create_document_tag_refs_document_cls_index()
 
     def setUp(self):
         super(TestCase, self).setUp()
 
-        self.mongo_client.drop_database(self.TEST_DATABASE_NAME)
+        for collection_name in self.db.collection_names():
+            if not collection_name.startswith("system."):
+                self.db.drop_collection(collection_name)
+
         recreate_indexes()
 
 
