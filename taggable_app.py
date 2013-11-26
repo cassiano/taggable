@@ -42,12 +42,12 @@ if __name__ == '__main__':
     mackenzie = Organization(name='Mackenzie', address='Av. Tiradentes, 11  Sao Paulo-SP').save()
     mackenzie_sp = Unit(name='Mackenzie SP', address='Av. 23 de Maio, 22  Sao Paulo-SP').save()
     mackenzie_cps = Unit(name='Mackenzie Campinas', address='Av. Brasil, 33  Campinas-SP').save()
-    terceiro_ano_mackenzie_cps = Year(name='3rd year').save()
+    terceiro_ano = Year(name='3rd grade').save()
     turma_a_mackenzie_cps = Class(name='A').save()
 
     mackenzie_cps.add_tag(mackenzie)            # We may add the tag to the document.
     mackenzie.add_document(mackenzie_sp)        # Or do it the other way around.
-    turma_a_mackenzie_cps.add_tag(terceiro_ano_mackenzie_cps)
+    turma_a_mackenzie_cps.add_tag(terceiro_ano)
     turma_a_mackenzie_cps.add_tag(mackenzie_cps)
     cassiano.add_tag(turma_a_mackenzie_cps)
 
