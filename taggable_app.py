@@ -53,14 +53,14 @@ if __name__ == '__main__':
 
     for student in Student.objects:
         class_tag = cassiano.tags_by_type(Class)[0]
-        print "%s belongs to class '%s'" % (student.name, class_tag.name)
+        print "%r belongs to class '%r'" % (student, class_tag)
 
         year_tag = class_tag.tags_by_type(Year)[0]
-        print "is in %s" % year_tag.name
+        print "is in %r" % year_tag
 
         unit_tag = class_tag.tags_by_type(Unit)[0]
-        print "and studies in %s, located in %s" % (unit_tag.name, unit_tag.address)
+        print "and studies in %r, located in %s" % (unit_tag, unit_tag.address)
 
     for organization in Organization.objects:
-        print "%s's units:" % organization.name
-        print ', '.join([unit.name for unit in organization.documents_by_type(Unit)])
+        print "%r's units:" % organization
+        print ', '.join([repr(unit) for unit in organization.documents_by_type(Unit)])
