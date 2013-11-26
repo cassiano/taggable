@@ -2,28 +2,28 @@ from taggable import *
 
 
 class Unit(Tag):
-    allowed_tag_types = { 'only': [('Organization', 1)] }
+    allowed_tags = { 'only': [('Organization', 1)] }
 
     address = StringField(required=True)
 
 
 class Year(Tag):
-    allowed_tag_types = []
+    allowed_tags = []
 
 
 class Class(Tag):
-    allowed_tag_types = [(Year, 1), (Unit, 1)]
+    allowed_tags = [(Year, 1), (Unit, 1)]
 
 
 class Organization(Tag):
-    allowed_document_types = { 'only': [Unit] }     # An organization is a collection of units.
-    allowed_tag_types = []                          # Collecting organizations is not allowed.
+    allowed_documents = { 'only': [Unit] }     # An organization is a collection of units.
+    allowed_tags = []                          # Collecting organizations is not allowed.
 
     address = StringField(required=True)
 
 
 class Student(Document, TaggableDocument):
-    allowed_tag_types = [Class]
+    allowed_tags = [Class]
 
     name = StringField(required=True)
 

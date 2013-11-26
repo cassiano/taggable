@@ -1,5 +1,6 @@
 from mongoengine import *
 from mongoengine.base import get_document
+from pymongo import ASCENDING, DESCENDING
 import inspect
 
 
@@ -57,8 +58,16 @@ def create_document_tag_refs_document_cls_index():
     DocumentTagRefs._get_collection().ensure_index('document._cls')
 
 
+def recreate_indexes():
+    create_document_tag_refs_document_cls_index()
+    DocumentTagRefs._get_collection().ensure_index(
+        [('document', ASCENDING), ('tag', ASCENDING)], unique=True)
+    DocumentTagRefs._get_collection().ensure_index('tag')
+    Tag._get_collection().ensure_index([('_cls', ASCENDING), ('name', ASCENDING)], unique=True)
+
+
 class TaggableDocument(object):
-    allowed_tag_types = ['Tag']
+    allowed_tags = ['Tag']
 
     def tags(self):
         refs = DocumentTagRefs.objects(document=self)
@@ -96,20 +105,20 @@ class TaggableDocument(object):
 
         match = None
 
-        if isinstance(self.allowed_tag_types, dict):
-            if not (set(self.allowed_tag_types) & set(['only', 'except'])):
-                raise ValueError("allowed_tag_types dict must contain 'only' and/or 'except' keys.")
+        if isinstance(self.allowed_tags, dict):
+            if not (set(self.allowed_tags) & set(['only', 'except'])):
+                raise ValueError("allowed_tags dict must contain 'only' and/or 'except' keys.")
 
-            if 'only' in self.allowed_tag_types:
-                match = find_match(self.allowed_tag_types['only'])
+            if 'only' in self.allowed_tags:
+                match = find_match(self.allowed_tags['only'])
 
-            if 'except' in self.allowed_tag_types:
-                find_match(self.allowed_tag_types['except'], False)
+            if 'except' in self.allowed_tags:
+                find_match(self.allowed_tags['except'], False)
 
-        elif isinstance(self.allowed_tag_types, list):
-            match = find_match(self.allowed_tag_types)
+        elif isinstance(self.allowed_tags, list):
+            match = find_match(self.allowed_tags)
         else:
-            raise TypeError("allowed_tag_types must be either a dict or a list.")
+            raise TypeError("allowed_tags must be either a dict or a list.")
 
         return match
 
@@ -138,7 +147,7 @@ class DocumentTagRefs(Document):
     }
 
 class Tag(Document, TaggableDocument):
-    allowed_document_types = [TaggableDocument]
+    allowed_documents = [TaggableDocument]
 
     name = StringField(max_length=120, required=True)
 
@@ -192,21 +201,21 @@ class Tag(Document, TaggableDocument):
 
         match = None
 
-        if isinstance(self.allowed_document_types, dict):
-            if not (set(self.allowed_document_types) & set(['only', 'except'])):
-                raise ValueError("allowed_document_types dict must contain 'only' and/or "
+        if isinstance(self.allowed_documents, dict):
+            if not (set(self.allowed_documents) & set(['only', 'except'])):
+                raise ValueError("allowed_documents dict must contain 'only' and/or "
                     "'except' keys.")
 
-            if 'only' in self.allowed_document_types:
-                match = find_match(self.allowed_document_types['only'])
+            if 'only' in self.allowed_documents:
+                match = find_match(self.allowed_documents['only'])
 
-            if 'except' in self.allowed_document_types:
-                find_match(self.allowed_document_types['except'], False)
+            if 'except' in self.allowed_documents:
+                find_match(self.allowed_documents['except'], False)
 
-        elif isinstance(self.allowed_document_types, list):
-            match = find_match(self.allowed_document_types)
+        elif isinstance(self.allowed_documents, list):
+            match = find_match(self.allowed_documents)
         else:
-            raise TypeError("allowed_document_types must be either a dict or a list.")
+            raise TypeError("allowed_documents must be either a dict or a list.")
 
         return match
 
