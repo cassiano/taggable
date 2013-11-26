@@ -9,12 +9,12 @@ def klass(class_object_or_name):
         return class_object_or_name
 
     if not isinstance(class_object_or_name, basestring):
-        raise TypeError("'%r' must be either a class or a string." % class_object_or_name)
+        raise TypeError("'%s' must be either a class or a string." % class_object_or_name)
 
     try:
         return get_document(class_object_or_name)
     except KeyError:
-        raise NameError("name '%r' is not defined." % class_object_or_name)
+        raise NameError("name '%s' is not defined." % class_object_or_name)
 
 
 def mongodb_compound_class_name(cls):
@@ -79,7 +79,7 @@ class TaggableDocument(object):
 
     def add_tag(self, tag):
         if not isinstance(tag, Tag):
-            raise TypeError("Invalid type %r. Only tags are allowed in document '%r'." %
+            raise TypeError("Invalid type %s. Only tags are allowed in document '%s'." %
                 (type(tag).__name__, self))
 
         if self.can_add_tag(tag):
@@ -98,7 +98,7 @@ class TaggableDocument(object):
             match = find(lambda tag_type: isinstance(tag, extract_class(tag_type)), tag_types)
 
             if (error_when_missing and not match) or (not error_when_missing and match):
-                raise TypeError("Tags of type '%r' are not allowed in document '%r'." %
+                raise TypeError("Tags of type '%s' are not allowed in document '%s'." %
                     (type(tag).__name__, self))
 
             return match
@@ -131,8 +131,8 @@ class TaggableDocument(object):
             # Check if the number of current tags of the matched type already associated
             # with this document has reached the allowed maximum.
             if len(self.tags_by_type(tag_type)) == max_tags_allowed:
-                raise ValueError("Maximum number (%d) of tags of type '%r' exceeded in "
-                    "document '%r'." % (max_tags_allowed, tag_type.__name__, self))
+                raise ValueError("Maximum number (%d) of tags of type '%s' exceeded in "
+                    "document '%s'." % (max_tags_allowed, tag_type.__name__, self))
 
 
 class DocumentTagRefs(Document):
@@ -174,7 +174,7 @@ class Tag(Document, TaggableDocument):
 
     def add_document(self, document):
         if not isinstance(document, TaggableDocument):
-            raise TypeError("Invalid type %r. Only taggable documents are allowed in tag '%r'." %
+            raise TypeError("Invalid type %s. Only taggable documents are allowed in tag '%s'." %
                 (type(document).__name__, self))
 
         if self.can_add_document(document):
@@ -194,7 +194,7 @@ class Tag(Document, TaggableDocument):
                          document_types)
 
             if (error_when_missing and not match) or (not error_when_missing and match):
-                raise TypeError("Documents of type '%r' are not allowed in tag '%r'." %
+                raise TypeError("Documents of type '%s' are not allowed in tag '%s'." %
                     (type(document).__name__, self))
 
             return match
@@ -228,8 +228,8 @@ class Tag(Document, TaggableDocument):
             # Check if the number of current documents of the matched type already associated
             # with this tag has reached the allowed maximum.
             if len(self.documents_by_type(document_type)) == max_documents_allowed:
-                raise ValueError("Maximum number (%d) of documents of type '%r' exceeded in "
-                    "tag '%r'." % (max_documents_allowed, document_type.__name__, self))
+                raise ValueError("Maximum number (%d) of documents of type '%s' exceeded in "
+                    "tag '%s'." % (max_documents_allowed, document_type.__name__, self))
 
-    def __repr__(self):
+    def __str__(self):
         return self.name
