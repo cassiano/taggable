@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     # Since MongoEngine doesn't seem to allow this particular index in the meta definition (see
     # DocumentTagRefs class definition above), create it directly in PyMongo.
-    create_document_tag_refs_document_cls_index()
+    create_document_tag_refs_cls_indexes()
 
     cassiano = Student(name='Cassiano D`Andrea').save()
     mackenzie = Organization(name='Mackenzie', address='Av. Tiradentes, 11  Sao Paulo-SP').save()

@@ -1,7 +1,7 @@
+import inspect, bson, re
 from mongoengine import *
 from mongoengine.base import get_document
 from pymongo import ASCENDING, DESCENDING
-import inspect
 
 
 def klass(class_object_or_name):
@@ -15,6 +15,17 @@ def klass(class_object_or_name):
         return get_document(class_object_or_name)
     except KeyError:
         raise NameError("name '%s' is not defined." % class_object_or_name)
+
+
+def descendants(cls):
+    """ Extracted from: http://stackoverflow.com/questions/3862310/
+    how-can-i-find-all-subclasses-of-a-given-class-in-python """
+
+    return cls.__subclasses__() + [
+        indirect_descendant
+        for direct_child in cls.__subclasses__()
+        for indirect_descendant in descendants(direct_child)
+    ]
 
 
 def mongodb_compound_class_name(cls):
@@ -47,19 +58,20 @@ def extract_max_refs(class_type_or_name_or_tuple):
 
 
 def find(f, seq):
-  """Returns first item in sequence where f(item) == True."""
+  """ Returns first item in sequence where f(item) == True. """
 
   for item in seq:
     if f(item):
       return item
 
 
-def create_document_tag_refs_document_cls_index():
+def create_document_tag_refs_cls_indexes():
     DocumentTagRefs._get_collection().ensure_index('document._cls')
+    DocumentTagRefs._get_collection().ensure_index('tag._cls')
 
 
 def recreate_indexes():
-    create_document_tag_refs_document_cls_index()
+    create_document_tag_refs_cls_indexes()
     DocumentTagRefs._get_collection().ensure_index(
         [('document', ASCENDING), ('tag', ASCENDING)], unique=True)
     DocumentTagRefs._get_collection().ensure_index('tag')
@@ -75,7 +87,30 @@ class TaggableDocument(object):
         return [ref.tag for ref in refs]
 
     def tags_by_type(self, tag_type):
-        return [tag for tag in self.tags() if isinstance(tag, klass(tag_type))]
+        def convert_camel_case_to_underscores(name):
+            """ Extracted from: http://stackoverflow.com/questions/1175208/
+            elegant-python-function-to-convert-camelcase-to-camel-case """
+
+            s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+            return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+        document_dbref_name = convert_camel_case_to_underscores(
+            mongodb_compound_class_name(type(self)).split('.')[0]
+        )
+
+        tag_type_and_descendants_mongodb_names = [
+            mongodb_compound_class_name(cls)
+            for cls in [klass(tag_type)] + descendants(klass(tag_type))
+        ]
+
+        refs = DocumentTagRefs.objects(
+            __raw__={
+                'document._ref': bson.dbref.DBRef(document_dbref_name, self.id),
+                'tag._cls': { '$in': tag_type_and_descendants_mongodb_names }
+            }
+        )
+
+        return [ref.tag for ref in refs]
 
     def add_tag(self, tag):
         if not isinstance(tag, Tag):
@@ -85,13 +120,13 @@ class TaggableDocument(object):
         if self.can_add_tag(tag):
             return tag.add_document(self)
 
-    def can_add_tag(self, tag):
+    def can_add_tag(self, tag, document_already_verified=False):
         match = self._check_if_tag_allowed(tag)
 
         if match:
             self._check_if_maximum_tag_limit_reached(match)
 
-        return True
+        return document_already_verified or tag.can_add_document(self, True)
 
     def _check_if_tag_allowed(self, tag):
         def find_match(tag_types, error_when_missing=True):
@@ -137,7 +172,7 @@ class TaggableDocument(object):
 
 class DocumentTagRefs(Document):
     document = GenericReferenceField()
-    tag = ReferenceField('Tag')
+    tag = GenericReferenceField()
 
     meta = {
         'indexes': [
@@ -164,9 +199,15 @@ class Tag(Document, TaggableDocument):
         return [ref.document for ref in refs]
 
     def documents_by_type(self, document_type):
+        document_type_and_descendants_mongodb_names = [
+            mongodb_compound_class_name(cls)
+            for cls in [klass(document_type)] + descendants(klass(document_type))
+        ]
+
         refs = DocumentTagRefs.objects(
             __raw__={
-                'document._cls': mongodb_compound_class_name(klass(document_type)), 'tag': self.id
+                'tag._ref': bson.dbref.DBRef('tag', self.id),
+                'document._cls': { '$in': document_type_and_descendants_mongodb_names }
             }
         )
 
@@ -180,13 +221,13 @@ class Tag(Document, TaggableDocument):
         if self.can_add_document(document):
             return DocumentTagRefs(document=document, tag=self).save()
 
-    def can_add_document(self, document):
+    def can_add_document(self, document, tag_already_verified=False):
         match = self._check_if_document_allowed(document)
 
         if match:
             self._check_if_maximum_document_limit_reached(match)
 
-        return True
+        return tag_already_verified or document.can_add_tag(self, True)
 
     def _check_if_document_allowed(self, document):
         def find_match(document_types, error_when_missing=True):
