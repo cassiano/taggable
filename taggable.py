@@ -87,30 +87,7 @@ class TaggableDocument(object):
         return [ref.tag for ref in refs]
 
     def tags_by_type(self, tag_type):
-        def convert_camel_case_to_underscores(name):
-            """ Extracted from: http://stackoverflow.com/questions/1175208/
-            elegant-python-function-to-convert-camelcase-to-camel-case """
-
-            s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-            return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
-
-        document_dbref_name = convert_camel_case_to_underscores(
-            mongodb_compound_class_name(type(self)).split('.')[0]
-        )
-
-        tag_type_and_descendants_mongodb_names = [
-            mongodb_compound_class_name(cls)
-            for cls in [klass(tag_type)] + descendants(klass(tag_type))
-        ]
-
-        refs = DocumentTagRefs.objects(
-            __raw__={
-                'document._ref': bson.dbref.DBRef(document_dbref_name, self.id),
-                'tag._cls': { '$in': tag_type_and_descendants_mongodb_names }
-            }
-        )
-
-        return [ref.tag for ref in refs]
+        return [tag for tag in self.tags() if isinstance(tag, klass(tag_type))]
 
     def add_tag(self, tag):
         if not isinstance(tag, Tag):
@@ -172,7 +149,7 @@ class TaggableDocument(object):
 
 class DocumentTagRefs(Document):
     document = GenericReferenceField()
-    tag = GenericReferenceField()
+    tag = ReferenceField('Tag')
 
     meta = {
         'indexes': [
@@ -206,7 +183,7 @@ class Tag(Document, TaggableDocument):
 
         refs = DocumentTagRefs.objects(
             __raw__={
-                'tag._ref': bson.dbref.DBRef('tag', self.id),
+                'tag': self.id,
                 'document._cls': { '$in': document_type_and_descendants_mongodb_names }
             }
         )
