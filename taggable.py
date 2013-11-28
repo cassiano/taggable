@@ -67,7 +67,6 @@ def find(f, seq):
 
 def create_document_tag_refs_cls_indexes():
     DocumentTagRefs._get_collection().ensure_index('document._cls')
-    DocumentTagRefs._get_collection().ensure_index('tag._cls')
 
 
 def recreate_indexes():
